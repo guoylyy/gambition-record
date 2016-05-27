@@ -3,6 +3,9 @@ package com.gambition.recorder;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -19,6 +22,10 @@ import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler;
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException;
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -42,8 +49,13 @@ public class MainActivity extends Activity {
     private static final String PAUSE_RECORD = "暂停录音";
     private static final String FINISH_RECORD = "结束录音";
 
+    private static final String WORKSPACE_PATH = "/sdcard/gambition";
+
     @Inject
     FFmpeg ffmpeg;
+
+    private String[] command = {"-i", WORKSPACE_PATH + "/audio.mp4", "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", WORKSPACE_PATH + "/output.mp4"};
+    private MediaRecorder mediaRecorder = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,8 +70,50 @@ public class MainActivity extends Activity {
         int width = dm.widthPixels;
         PROPORTION = (float) width / (float) DESIGN_PROTOTYPE_WIDTH;
 
+        initWorkspace();
+        initRecorder();
+        initBackgroundImage();
+
         loadFFMpegBinary();
         initUI();
+    }
+
+    private void initWorkspace() {
+        File workspaceDir = new File(WORKSPACE_PATH);
+        if (!workspaceDir.exists()) {
+            workspaceDir.mkdir();
+        }
+    }
+
+    private void initRecorder() {
+        if (mediaRecorder == null) {
+            mediaRecorder = new MediaRecorder();
+        }
+
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+
+        mediaRecorder.setOutputFile(WORKSPACE_PATH + "/audio.mp4");
+    }
+
+    private void initBackgroundImage() {
+        Bitmap backgroundBitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.movie_image);
+
+        File f = new File(WORKSPACE_PATH + "/bg.jpg");
+        if (f.exists()) {
+            f.delete();
+        }
+        try {
+            FileOutputStream out = new FileOutputStream(f);
+            backgroundBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initUI() {
@@ -90,7 +144,12 @@ public class MainActivity extends Activity {
                     finishHolderRelativeLayout.setClickable(true);
                     Toast.makeText(MainActivity.this, START_RECORD, Toast.LENGTH_SHORT).show();
 
-                    execFFmpegBinary(new String[]{"ffmpeg -version"});
+                    try {
+                        mediaRecorder.prepare();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    mediaRecorder.start();
                 } else {
                     setStartStyle();
                     Toast.makeText(MainActivity.this, PAUSE_RECORD, Toast.LENGTH_SHORT).show();
@@ -105,6 +164,12 @@ public class MainActivity extends Activity {
                 setStartStyle();
                 finishHolderRelativeLayout.setClickable(false);
                 Toast.makeText(MainActivity.this, FINISH_RECORD, Toast.LENGTH_SHORT).show();
+
+                mediaRecorder.stop();
+                mediaRecorder.reset();
+
+                execFFmpegBinary(new String[]{"-version"});
+                execFFmpegBinary(command);
             }
         });
 
