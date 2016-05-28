@@ -3,6 +3,7 @@ package com.gambition.recorder;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -62,6 +63,7 @@ public class MainActivity extends Activity {
     private static final String WORKSPACE_PATH = "/sdcard/gambition";
 
     public static final SimpleDateFormat DATE_FULL_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+    public static final SimpleDateFormat CN_DATE_FULL_FORMAT = new SimpleDateFormat("yyyy年MM月dd日HH时mm分ss秒录");
 
     private static final String TARGET_FILE_NAME = WORKSPACE_PATH + "/audio.mp4";
 
@@ -228,6 +230,12 @@ public class MainActivity extends Activity {
 
                         VideoRecord record = new VideoRecord(new File(path).getName(), current, 0, path);
                         record.saveFast();
+
+                        List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+
+                        VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
+                        ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
+                        recordListView.setAdapter(recordListAdapter);
                     }
 
                     @Override
@@ -235,12 +243,6 @@ public class MainActivity extends Activity {
 
                     }
                 });
-
-                List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
-
-                VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
-                ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
-                recordListView.setAdapter(recordListAdapter);
             }
         });
 
@@ -294,17 +296,9 @@ public class MainActivity extends Activity {
                 @Override
                 public void onFinish() {
                     Log.d(TAG, "Finished command : ffmpeg " + command);
-                    final MediaScannerConnection msc = new MediaScannerConnection(MainActivity.this, new MediaScannerConnection.MediaScannerConnectionClient() {
-                        public void onMediaScannerConnected() {
 
-                        }
+                    sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(new File(path))));
 
-                        public void onScanCompleted(String path, Uri uri) {
-
-                        }
-                    });
-                    msc.scanFile(path, "video/mp4");
-                    msc.disconnect();
                     handleTempFile(TARGET_FILE_NAME);
                 }
             });

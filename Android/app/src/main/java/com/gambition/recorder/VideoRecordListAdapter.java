@@ -1,5 +1,6 @@
 package com.gambition.recorder;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -11,9 +12,12 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.litepal.crud.DataSupport;
 
 import static com.gambition.recorder.MainActivity.PROPORTION;
 
@@ -79,7 +83,7 @@ public class VideoRecordListAdapter extends BaseAdapter {
 
         nameTextView.setText(record.getName());
         long current = record.getDate();
-        dateTextView.setText(MainActivity.DATE_FULL_FORMAT.format(new Date(current)));
+        dateTextView.setText(MainActivity.CN_DATE_FULL_FORMAT.format(new Date(current)));
         secondsTextView.setText(String.valueOf(record.getDuration()));
 
         final RelativeLayout operationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_operation_relativelayout);
@@ -92,7 +96,9 @@ public class VideoRecordListAdapter extends BaseAdapter {
         operationImageViewParams.height = (int) (70 * PROPORTION);
         operationImageViewParams.leftMargin = (int) (30 * PROPORTION);
 
-        operationRelativeLayout.setOnClickListener(new View.OnClickListener() {
+        RelativeLayout leftOperationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_left_operation_relativelayout);
+
+        leftOperationRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -106,6 +112,26 @@ public class VideoRecordListAdapter extends BaseAdapter {
         deleteImageViewParams.width = (int) (50 * PROPORTION);
         deleteImageViewParams.height = (int) (66 * PROPORTION);
         deleteImageViewParams.rightMargin = (int) (30 * PROPORTION);
+
+        RelativeLayout rightOperationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_right_operation_relativelayout);
+
+        rightOperationRelativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                record.delete();
+                File videoFile = new File(record.getPath());
+                if (videoFile.exists()) {
+                    videoFile.delete();
+                    context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(videoFile)));
+                }
+
+                List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+
+                VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(context, recordList);
+                ListView recordListView = (ListView) ((Activity) context).findViewById(R.id.main_activity_records_listview);
+                recordListView.setAdapter(recordListAdapter);
+            }
+        });
 
         operationRelativeLayout.setVisibility(View.GONE);
 
