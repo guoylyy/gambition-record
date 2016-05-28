@@ -59,7 +59,7 @@ public class MainActivity extends Activity {
 
     private static final String WORKSPACE_PATH = "/sdcard/gambition";
 
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmsss");
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private static final String TARGET_FILE_NAME = WORKSPACE_PATH + "/audio.mp4";
 
@@ -186,6 +186,8 @@ public class MainActivity extends Activity {
                     });
                 } else {
                     setStartStyle();
+                    setFinishDisableStyle();
+                    finishHolderRelativeLayout.setClickable(false);
                     Toast.makeText(MainActivity.this, PAUSE_RECORD, Toast.LENGTH_SHORT).show();
 
                     mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
@@ -211,6 +213,18 @@ public class MainActivity extends Activity {
                 finishHolderRelativeLayout.setClickable(false);
                 Toast.makeText(MainActivity.this, FINISH_RECORD, Toast.LENGTH_SHORT).show();
 
+                mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
+                    @Override
+                    public void onPaused(String activeRecordFileName) {
+
+                    }
+
+                    @Override
+                    public void onException(Exception e) {
+
+                    }
+                });
+
                 File defaultSystemPath = new File("/sdcard/DCIM/Camera");
                 if (!defaultSystemPath.exists()) {
                     defaultSystemPath.mkdir();
@@ -223,8 +237,14 @@ public class MainActivity extends Activity {
                 String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
                 execFFmpegBinary(command);
 
-                VideoRecord record = new VideoRecord("Test", current, 0, path);
+                VideoRecord record = new VideoRecord(new File(path).getName(), current, 0, path);
                 record.saveFast();
+
+                List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+
+                VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
+                ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
+                recordListView.setAdapter(recordListAdapter);
             }
         });
 
