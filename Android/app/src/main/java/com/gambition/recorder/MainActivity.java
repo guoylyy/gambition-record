@@ -165,9 +165,6 @@ public class MainActivity extends Activity {
         operationHolderRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!isFinishEnableStyle) {
-                    handleTempFile(TARGET_FILE_NAME);
-                }
                 if (isStartStyle) {
                     setPauseStyle();
                     setFinishEnableStyle();
@@ -217,7 +214,20 @@ public class MainActivity extends Activity {
                 mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                     @Override
                     public void onPaused(String activeRecordFileName) {
+                        File defaultSystemPath = new File("/sdcard/DCIM/Camera");
+                        if (!defaultSystemPath.exists()) {
+                            defaultSystemPath.mkdir();
+                        }
 
+                        long current = System.currentTimeMillis();
+                        Date currentDate = new Date(current);
+                        String path = defaultSystemPath + "/gambition_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
+
+                        String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
+                        execFFmpegBinary(path, command);
+
+                        VideoRecord record = new VideoRecord(new File(path).getName(), current, 0, path);
+                        record.saveFast();
                     }
 
                     @Override
@@ -225,21 +235,6 @@ public class MainActivity extends Activity {
 
                     }
                 });
-
-                File defaultSystemPath = new File("/sdcard/DCIM/Camera");
-                if (!defaultSystemPath.exists()) {
-                    defaultSystemPath.mkdir();
-                }
-
-                long current = System.currentTimeMillis();
-                Date currentDate = new Date(current);
-                String path = defaultSystemPath + "/gambition_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
-
-                String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
-                execFFmpegBinary(path, command);
-
-                VideoRecord record = new VideoRecord(new File(path).getName(), current, 0, path);
-                record.saveFast();
 
                 List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
 
