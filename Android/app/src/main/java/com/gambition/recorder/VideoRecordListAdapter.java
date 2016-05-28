@@ -1,6 +1,10 @@
 package com.gambition.recorder;
 
 import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,10 +13,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import static com.gambition.recorder.MainActivity.PROPORTION;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class VideoRecordListAdapter extends BaseAdapter {
@@ -68,9 +75,12 @@ public class VideoRecordListAdapter extends BaseAdapter {
         secondsTextViewParams.rightMargin = (int) (30 * PROPORTION);
         secondsTextViewParams.bottomMargin = (int) (20 * PROPORTION);
 
-        nameTextView.setText(records.get(i).getName());
-        dateTextView.setText(records.get(i).getName());
-        secondsTextView.setText(records.get(i).getName());
+        final VideoRecord record = records.get(i);
+
+        nameTextView.setText(record.getName());
+        long current = record.getDate();
+        dateTextView.setText(MainActivity.DATE_FULL_FORMAT.format(new Date(current)));
+        secondsTextView.setText(String.valueOf(record.getDuration()));
 
         final RelativeLayout operationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_operation_relativelayout);
         LinearLayout.LayoutParams operationRelativeLayoutParams = (LinearLayout.LayoutParams) operationRelativeLayout.getLayoutParams();
@@ -82,6 +92,15 @@ public class VideoRecordListAdapter extends BaseAdapter {
         operationImageViewParams.height = (int) (70 * PROPORTION);
         operationImageViewParams.leftMargin = (int) (30 * PROPORTION);
 
+        operationRelativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.fromFile(new File(record.getPath())), "video/mp4");
+                context.startActivity(intent);
+            }
+        });
+
         ImageView deleteImageView = (ImageView) view.findViewById(R.id.record_item_delete_imageview);
         RelativeLayout.LayoutParams deleteImageViewParams = (RelativeLayout.LayoutParams) deleteImageView.getLayoutParams();
         deleteImageViewParams.width = (int) (50 * PROPORTION);
@@ -90,7 +109,7 @@ public class VideoRecordListAdapter extends BaseAdapter {
 
         operationRelativeLayout.setVisibility(View.GONE);
 
-        view.setOnClickListener(new View.OnClickListener() {
+        contentRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (operationRelativeLayout.getVisibility() == View.GONE) {

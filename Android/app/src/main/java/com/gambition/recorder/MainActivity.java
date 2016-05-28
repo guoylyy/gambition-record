@@ -59,7 +59,7 @@ public class MainActivity extends Activity {
 
     private static final String WORKSPACE_PATH = "/sdcard/gambition";
 
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+    public static final SimpleDateFormat DATE_FULL_FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private static final String TARGET_FILE_NAME = WORKSPACE_PATH + "/audio.mp4";
 
@@ -232,7 +232,7 @@ public class MainActivity extends Activity {
 
                 long current = System.currentTimeMillis();
                 Date currentDate = new Date(current);
-                String path = defaultSystemPath + "/gambition_" + sdf.format(currentDate) + ".mp4";
+                String path = defaultSystemPath + "/gambition_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
 
                 String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
                 execFFmpegBinary(command);
