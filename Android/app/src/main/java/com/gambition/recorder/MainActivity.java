@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.DisplayMetrics;
@@ -163,10 +165,6 @@ public class MainActivity extends Activity {
         operationHolderRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!isFinishEnableStyle) {
-                    handleTempFile(TARGET_FILE_NAME);
-                }
-
                 if (isStartStyle) {
                     setPauseStyle();
                     setFinishEnableStyle();
@@ -235,7 +233,7 @@ public class MainActivity extends Activity {
                 String path = defaultSystemPath + "/gambition_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
 
                 String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
-                execFFmpegBinary(command);
+                execFFmpegBinary(path, command);
 
                 VideoRecord record = new VideoRecord(new File(path).getName(), current, 0, path);
                 record.saveFast();
@@ -272,7 +270,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void execFFmpegBinary(final String[] command) {
+    private void execFFmpegBinary(final String path, final String[] command) {
         try {
             ffmpeg.execute(command, new ExecuteBinaryResponseHandler() {
                 @Override
@@ -298,6 +296,18 @@ public class MainActivity extends Activity {
                 @Override
                 public void onFinish() {
                     Log.d(TAG, "Finished command : ffmpeg " + command);
+                    final MediaScannerConnection msc = new MediaScannerConnection(MainActivity.this, new MediaScannerConnection.MediaScannerConnectionClient() {
+                        public void onMediaScannerConnected() {
+
+                        }
+
+                        public void onScanCompleted(String path, Uri uri) {
+
+                        }
+                    });
+                    msc.scanFile(path, "video/mp4");
+                    msc.disconnect();
+                    handleTempFile(TARGET_FILE_NAME);
                 }
             });
         } catch (FFmpegCommandAlreadyRunningException e) {
