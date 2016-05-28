@@ -165,6 +165,9 @@ public class MainActivity extends Activity {
         operationHolderRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!isFinishEnableStyle) {
+                    handleTempFile(TARGET_FILE_NAME);
+                }
                 if (isStartStyle) {
                     setPauseStyle();
                     setFinishEnableStyle();
