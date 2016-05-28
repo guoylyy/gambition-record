@@ -3,10 +3,12 @@ package com.gambition.recorder;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -21,11 +23,17 @@ import com.github.hiteshsondhi88.libffmpeg.FFmpeg;
 import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler;
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException;
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException;
+import com.github.lassana.recorder.AudioRecorder;
+import com.github.lassana.recorder.AudioRecorderBuilder;
+
+import org.litepal.crud.DataSupport;
+import org.litepal.tablemanager.Connector;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -51,11 +59,14 @@ public class MainActivity extends Activity {
 
     private static final String WORKSPACE_PATH = "/sdcard/gambition";
 
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmsss");
+
+    private static final String TARGET_FILE_NAME = WORKSPACE_PATH + "/audio.mp4";
+
     @Inject
     FFmpeg ffmpeg;
 
-    private String[] command = {"-i", WORKSPACE_PATH + "/audio.mp4", "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", WORKSPACE_PATH + "/output.mp4"};
-    private MediaRecorder mediaRecorder = null;
+    private AudioRecorder mediaRecorder = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,15 +97,29 @@ public class MainActivity extends Activity {
     }
 
     private void initRecorder() {
-        if (mediaRecorder == null) {
-            mediaRecorder = new MediaRecorder();
+        mediaRecorder = AudioRecorderBuilder.with(MainActivity.this)
+                .fileName(TARGET_FILE_NAME)
+                .config(AudioRecorder.MediaRecorderConfig.DEFAULT)
+                .loggable()
+                .build();
+    }
+
+    private void handleTempFile(String fileName) {
+        File targetFile = new File(fileName);
+        if (targetFile.exists()) {
+            targetFile.delete();
+            try {
+                targetFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                targetFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-
-        mediaRecorder.setOutputFile(WORKSPACE_PATH + "/audio.mp4");
     }
 
     private void initBackgroundImage() {
@@ -138,21 +163,42 @@ public class MainActivity extends Activity {
         operationHolderRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!isFinishEnableStyle) {
+                    handleTempFile(TARGET_FILE_NAME);
+                }
+
                 if (isStartStyle) {
                     setPauseStyle();
                     setFinishEnableStyle();
                     finishHolderRelativeLayout.setClickable(true);
                     Toast.makeText(MainActivity.this, START_RECORD, Toast.LENGTH_SHORT).show();
 
-                    try {
-                        mediaRecorder.prepare();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    mediaRecorder.start();
+                    mediaRecorder.start(new AudioRecorder.OnStartListener() {
+                        @Override
+                        public void onStarted() {
+
+                        }
+
+                        @Override
+                        public void onException(Exception e) {
+
+                        }
+                    });
                 } else {
                     setStartStyle();
                     Toast.makeText(MainActivity.this, PAUSE_RECORD, Toast.LENGTH_SHORT).show();
+
+                    mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
+                        @Override
+                        public void onPaused(String activeRecordFileName) {
+
+                        }
+
+                        @Override
+                        public void onException(Exception e) {
+
+                        }
+                    });
                 }
             }
         });
@@ -165,11 +211,20 @@ public class MainActivity extends Activity {
                 finishHolderRelativeLayout.setClickable(false);
                 Toast.makeText(MainActivity.this, FINISH_RECORD, Toast.LENGTH_SHORT).show();
 
-                mediaRecorder.stop();
-                mediaRecorder.reset();
+                File defaultSystemPath = new File("/sdcard/DCIM/Camera");
+                if (!defaultSystemPath.exists()) {
+                    defaultSystemPath.mkdir();
+                }
 
-                execFFmpegBinary(new String[]{"-version"});
+                long current = System.currentTimeMillis();
+                Date currentDate = new Date(current);
+                String path = defaultSystemPath + "/gambition_" + sdf.format(currentDate) + ".mp4";
+
+                String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
                 execFFmpegBinary(command);
+
+                VideoRecord record = new VideoRecord("Test", current, 0, path);
+                record.saveFast();
             }
         });
 
@@ -177,15 +232,7 @@ public class MainActivity extends Activity {
 
         finishHolderRelativeLayout.setClickable(false);
 
-        List<VideoRecord> recordList = new ArrayList<>();
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
-        recordList.add(new VideoRecord("123", new Date(), 100));
+        List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
 
         VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(this, recordList);
         ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);

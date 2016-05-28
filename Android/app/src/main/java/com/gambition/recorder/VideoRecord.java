@@ -1,16 +1,18 @@
 package com.gambition.recorder;
 
-import java.util.Date;
+import org.litepal.crud.DataSupport;
 
-public class VideoRecord {
+public class VideoRecord extends DataSupport {
     private String name;
-    private Date date;
-    private long second;
+    private long date;
+    private long duration;
+    private String path;
 
-    public VideoRecord(String name, Date date, long second) {
+    public VideoRecord(String name, long date, long duration, String path) {
         this.name = name;
         this.date = date;
-        this.second = second;
+        this.duration = duration;
+        this.path = path;
     }
 
     public String getName() {
@@ -21,19 +23,27 @@ public class VideoRecord {
         this.name = name;
     }
 
-    public Date getDate() {
+    public long getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(long date) {
         this.date = date;
     }
 
-    public long getSecond() {
-        return second;
+    public long getDuration() {
+        return duration;
     }
 
-    public void setSecond(long second) {
-        this.second = second;
+    public void setDuration(long duration) {
+        this.duration = duration;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }
