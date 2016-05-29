@@ -27,6 +27,9 @@ import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunnin
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException;
 import com.github.lassana.recorder.AudioRecorder;
 import com.github.lassana.recorder.AudioRecorderBuilder;
+import com.googlecode.mp4parser.authoring.Movie;
+import com.googlecode.mp4parser.authoring.Track;
+import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
 
 import org.litepal.crud.DataSupport;
 
@@ -65,6 +68,7 @@ public class MainActivity extends Activity {
     private static final String TARGET_FILE_NAME = WORKSPACE_PATH + "/audio.mp4";
 
     private boolean countFlag = true;
+    private boolean finishFlag = false;
     private long currentSecond = 0;
     private Thread secondThread;
 
@@ -150,27 +154,7 @@ public class MainActivity extends Activity {
         @Override
         public void handleMessage(Message msg) {
             TextView lengthTextView = (TextView) findViewById(R.id.main_activity_length_textview);
-            long hour = currentSecond / 3600;
-            long minute = (currentSecond % 3600) / 60;
-            long second = ((currentSecond % 3600)) % 60;
-
-            String hourStr, minuteStr, secondStr;
-            if (hour < 10) {
-                hourStr = "0" + hour;
-            } else {
-                hourStr = String.valueOf(hour);
-            }
-            if (minute < 10) {
-                minuteStr = "0" + minute;
-            } else {
-                minuteStr = String.valueOf(minute);
-            }
-            if (second < 10) {
-                secondStr = "0" + second;
-            } else {
-                secondStr = String.valueOf(second);
-            }
-            lengthTextView.setText(hourStr + ":" + minuteStr + ":" + secondStr);
+            lengthTextView.setText(Utility.covertToTimeString(currentSecond));
         }
     };
 
@@ -193,6 +177,9 @@ public class MainActivity extends Activity {
 
         setStartStyle();
 
+        final TextView statusTextView = (TextView) findViewById(R.id.main_activity_status_textview);
+        statusTextView.setVisibility(View.GONE);
+
         operationHolderRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -201,6 +188,8 @@ public class MainActivity extends Activity {
                     setFinishEnableStyle();
                     finishHolderRelativeLayout.setClickable(true);
                     Toast.makeText(MainActivity.this, START_RECORD, Toast.LENGTH_SHORT).show();
+
+                    statusTextView.setVisibility(View.VISIBLE);
 
                     mediaRecorder.start(new AudioRecorder.OnStartListener() {
                         @Override
@@ -215,6 +204,7 @@ public class MainActivity extends Activity {
                     });
 
                     countFlag = true;
+                    finishFlag = false;
 
                     secondThread = new Thread(new Runnable() {
                         @Override
@@ -225,7 +215,11 @@ public class MainActivity extends Activity {
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-                                currentSecond++;
+                                if (finishFlag) {
+                                    currentSecond = 0;
+                                } else {
+                                    currentSecond++;
+                                }
                                 secondHandler.sendEmptyMessage(0);
                             }
                         }
@@ -238,6 +232,8 @@ public class MainActivity extends Activity {
                     Toast.makeText(MainActivity.this, PAUSE_RECORD, Toast.LENGTH_SHORT).show();
 
                     countFlag = false;
+
+                    statusTextView.setVisibility(View.GONE);
 
                     mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                         @Override
@@ -263,6 +259,9 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, FINISH_RECORD, Toast.LENGTH_SHORT).show();
 
                 countFlag = false;
+                finishFlag = true;
+
+                statusTextView.setVisibility(View.GONE);
 
                 mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                     @Override
@@ -285,16 +284,7 @@ public class MainActivity extends Activity {
                                 String path = defaultSystemPath + "/" + name + "_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
 
                                 String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
-                                execFFmpegBinary(path, command);
-
-                                VideoRecord record = new VideoRecord(name, current, 0, path);
-                                record.saveFast();
-
-                                List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
-
-                                VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
-                                ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
-                                recordListView.setAdapter(recordListAdapter);
+                                execFFmpegBinary(name, current, path, command);
                             }
                         });
                         builder.setNegativeButton("取消", new android.content.DialogInterface.OnClickListener() {
@@ -338,7 +328,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void execFFmpegBinary(final String path, final String[] command) {
+    private void execFFmpegBinary(final String name, final long current, final String path, final String[] command) {
         try {
             ffmpeg.execute(command, new ExecuteBinaryResponseHandler() {
                 @Override
@@ -364,6 +354,31 @@ public class MainActivity extends Activity {
                 @Override
                 public void onFinish() {
                     Log.d(TAG, "Finished command : ffmpeg " + command);
+
+                    Movie movie = null;
+                    try {
+                        movie = MovieCreator.build(path);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    long timeScale = movie.getTimescale();
+                    List<Track> tracks = movie.getTracks();
+                    long duration = 0;
+
+                    for (int i = 0; i != tracks.size(); i++) {
+                        if (tracks.get(i).getHandler().equals("soun")) {
+                            duration = tracks.get(i).getDuration();
+                        }
+                    }
+
+                    VideoRecord record = new VideoRecord(name, current, duration / timeScale, path);
+                    record.saveFast();
+
+                    List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+
+                    VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
+                    ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
+                    recordListView.setAdapter(recordListAdapter);
 
                     sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(new File(path))));
 

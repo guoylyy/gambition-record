@@ -82,7 +82,7 @@ public class VideoRecordListAdapter extends BaseAdapter {
         nameTextView.setText(record.getName());
         long current = record.getDate();
         dateTextView.setText(MainActivity.CN_DATE_FULL_FORMAT.format(new Date(current)));
-        secondsTextView.setText(String.valueOf(record.getDuration()));
+        secondsTextView.setText(Utility.covertToTimeString(record.getDuration()));
 
         final RelativeLayout operationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_operation_relativelayout);
         LinearLayout.LayoutParams operationRelativeLayoutParams = (LinearLayout.LayoutParams) operationRelativeLayout.getLayoutParams();
