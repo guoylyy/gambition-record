@@ -2,6 +2,7 @@ package com.gambition.recorder;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -115,18 +116,31 @@ public class VideoRecordListAdapter extends BaseAdapter {
         rightOperationRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                GambitionNotifyDialog.Builder builder = new GambitionNotifyDialog.Builder(context);
+                builder.setTitle("确定要删除？");
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        File videoFile = new File(record.getPath());
+                        if (videoFile.exists()) {
+                            videoFile.delete();
+                            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(videoFile)));
+                        }
+
+                        List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+
+                        VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(context, recordList);
+                        ListView recordListView = (ListView) ((Activity) context).findViewById(R.id.main_activity_records_listview);
+                        recordListView.setAdapter(recordListAdapter);
+                    }
+                });
+                builder.setNegativeButton("取消", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                builder.create().show();
                 record.delete();
-                File videoFile = new File(record.getPath());
-                if (videoFile.exists()) {
-                    videoFile.delete();
-                    context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(videoFile)));
-                }
-
-                List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
-
-                VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(context, recordList);
-                ListView recordListView = (ListView) ((Activity) context).findViewById(R.id.main_activity_records_listview);
-                recordListView.setAdapter(recordListAdapter);
             }
         });
 

@@ -16,9 +16,9 @@ import android.widget.TextView;
 
 import static com.gambition.recorder.MainActivity.PROPORTION;
 
-public class GambitionDialog extends Dialog {
+public class GambitionNotifyDialog extends Dialog {
 
-    public GambitionDialog(Context context) {
+    public GambitionNotifyDialog(Context context) {
         super(context, R.style.GambitionDialog);
     }
 
@@ -29,7 +29,7 @@ public class GambitionDialog extends Dialog {
         private String negativeButtonText;
         private OnClickListener positiveButtonClickListener;
         private OnClickListener negativeButtonClickListener;
-        private int height = 820;
+        private int height = 544;
         private int titleHeight = 380;
         private EditText inputEditText;
 
@@ -91,10 +91,10 @@ public class GambitionDialog extends Dialog {
             this.titleHeight = height;
         }
 
-        public GambitionDialog create() {
+        public GambitionNotifyDialog create() {
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             // instantiate the dialog with the custom Theme  
-            final GambitionDialog dialog = new GambitionDialog(context);
+            final GambitionNotifyDialog dialog = new GambitionNotifyDialog(context);
             View layout = inflater.inflate(R.layout.gambition_dialog, null);
             LayoutParams params = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             dialog.addContentView(layout, params);
@@ -122,6 +122,8 @@ public class GambitionDialog extends Dialog {
             inputEditTextParams.leftMargin = (int) (100 * PROPORTION);
             inputEditTextParams.rightMargin = (int) (100 * PROPORTION);
             inputEditTextParams.bottomMargin = (int) (100 * PROPORTION);
+
+            inputEditText.setVisibility(View.GONE);
 
             // set the confirm button  
             if (positiveButtonText != null) {

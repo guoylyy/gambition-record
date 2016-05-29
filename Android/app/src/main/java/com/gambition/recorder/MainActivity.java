@@ -210,10 +210,12 @@ public class MainActivity extends Activity {
                 mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                     @Override
                     public void onPaused(String activeRecordFileName) {
-                        final GambitionDialog.Builder builder = new GambitionDialog.Builder(MainActivity.this);
+                        final GambitionInputDialog.Builder builder = new GambitionInputDialog.Builder(MainActivity.this);
                         builder.setTitle("请输入名字");
                         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+
                                 File defaultSystemPath = new File("/sdcard/DCIM/Camera");
                                 if (!defaultSystemPath.exists()) {
                                     defaultSystemPath.mkdir();
