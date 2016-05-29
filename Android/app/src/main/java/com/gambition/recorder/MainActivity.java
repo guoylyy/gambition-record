@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -15,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler;
@@ -60,6 +63,10 @@ public class MainActivity extends Activity {
     public static final SimpleDateFormat CN_DATE_FULL_FORMAT = new SimpleDateFormat("yyyy年MM月dd日HH时mm分ss秒录");
 
     private static final String TARGET_FILE_NAME = WORKSPACE_PATH + "/audio.mp4";
+
+    private boolean countFlag = true;
+    private long currentSecond = 0;
+    private Thread secondThread;
 
     @Inject
     FFmpeg ffmpeg;
@@ -139,6 +146,34 @@ public class MainActivity extends Activity {
         }
     }
 
+    private Handler secondHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            TextView lengthTextView = (TextView) findViewById(R.id.main_activity_length_textview);
+            long hour = currentSecond / 3600;
+            long minute = (currentSecond % 3600) / 60;
+            long second = ((currentSecond % 3600)) % 60;
+
+            String hourStr, minuteStr, secondStr;
+            if (hour < 10) {
+                hourStr = "0" + hour;
+            } else {
+                hourStr = String.valueOf(hour);
+            }
+            if (minute < 10) {
+                minuteStr = "0" + minute;
+            } else {
+                minuteStr = String.valueOf(minute);
+            }
+            if (second < 10) {
+                secondStr = "0" + second;
+            } else {
+                secondStr = String.valueOf(second);
+            }
+            lengthTextView.setText(hourStr + ":" + minuteStr + ":" + secondStr);
+        }
+    };
+
     private void initUI() {
         RelativeLayout operationRelativeLayout = (RelativeLayout) findViewById(R.id.main_activity_operation_relativelayout);
         LinearLayout.LayoutParams operationRelativeLayoutParams = (LinearLayout.LayoutParams) operationRelativeLayout.getLayoutParams();
@@ -178,11 +213,31 @@ public class MainActivity extends Activity {
 
                         }
                     });
+
+                    countFlag = true;
+
+                    secondThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while (countFlag) {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                currentSecond++;
+                                secondHandler.sendEmptyMessage(0);
+                            }
+                        }
+                    });
+                    secondThread.start();
                 } else {
                     setStartStyle();
                     setFinishDisableStyle();
                     finishHolderRelativeLayout.setClickable(false);
                     Toast.makeText(MainActivity.this, PAUSE_RECORD, Toast.LENGTH_SHORT).show();
+
+                    countFlag = false;
 
                     mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                         @Override
@@ -206,6 +261,8 @@ public class MainActivity extends Activity {
                 setStartStyle();
                 finishHolderRelativeLayout.setClickable(false);
                 Toast.makeText(MainActivity.this, FINISH_RECORD, Toast.LENGTH_SHORT).show();
+
+                countFlag = false;
 
                 mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                     @Override
