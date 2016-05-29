@@ -46,18 +46,38 @@
                 android:src="@mipmap/ic_volume_down" />
         </RelativeLayout>
 
-        <RelativeLayout
+        <LinearLayout
             android:id="@+id/record_item_right_operation_relativelayout"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_alignParentRight="true">
+            android:layout_alignParentRight="true"
+            android:orientation="horizontal">
 
-            <ImageView
-                android:id="@+id/record_item_delete_imageview"
+            <RelativeLayout
+                android:id="@+id/record_item_rename_operation_relativelayout"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:src="@mipmap/ic_delete" />
-        </RelativeLayout>
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/record_item_rename_imageview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:src="@mipmap/rename" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/record_item_delete_operation_relativelayout"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/record_item_delete_imageview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:src="@mipmap/ic_delete" />
+            </RelativeLayout>
+        </LinearLayout>
     </RelativeLayout>
 </LinearLayout>

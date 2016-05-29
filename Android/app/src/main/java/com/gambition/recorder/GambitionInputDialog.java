@@ -77,6 +77,10 @@ public class GambitionInputDialog extends Dialog {
             return inputEditText.getText().toString();
         }
 
+        public void setInputName(String name) {
+            inputEditText.setText(name);
+        }
+
         public Builder setNegativeButton(String negativeButtonText, OnClickListener listener) {
             this.negativeButtonText = negativeButtonText;
             this.negativeButtonClickListener = listener;

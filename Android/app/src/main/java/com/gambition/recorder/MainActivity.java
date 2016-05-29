@@ -1,7 +1,9 @@
 package com.gambition.recorder;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -38,6 +40,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -72,10 +75,13 @@ public class MainActivity extends Activity {
     private long currentSecond = 0;
     private Thread secondThread;
 
+    private PermissionsCheckerUtil mPermissionsCheckerUtil;
+
     @Inject
     FFmpeg ffmpeg;
 
     private AudioRecorder mediaRecorder = null;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +95,15 @@ public class MainActivity extends Activity {
         int height = dm.heightPixels;
         int width = dm.widthPixels;
         PROPORTION = (float) width / (float) DESIGN_PROTOTYPE_WIDTH;
+
+        mPermissionsCheckerUtil = new PermissionsCheckerUtil(this);
+
+        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS, Manifest.permission.RECORD_AUDIO};
+        if (mPermissionsCheckerUtil.lacksPermissions()) {
+            Intent intent = new Intent(this, PermissionsActivity.class);
+            intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
+            startActivity(intent);
+        }
 
         initWorkspace();
         initRecorder();
@@ -111,6 +126,7 @@ public class MainActivity extends Activity {
                 .config(AudioRecorder.MediaRecorderConfig.DEFAULT)
                 .loggable()
                 .build();
+        handleTempFile(TARGET_FILE_NAME);
     }
 
     private void handleTempFile(String fileName) {
@@ -272,6 +288,8 @@ public class MainActivity extends Activity {
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
 
+                                progressDialog = ProgressDialog.show(MainActivity.this, "提示", "正在生成视频");
+
                                 File defaultSystemPath = new File("/sdcard/DCIM/Camera");
                                 if (!defaultSystemPath.exists()) {
                                     defaultSystemPath.mkdir();
@@ -309,6 +327,7 @@ public class MainActivity extends Activity {
         finishHolderRelativeLayout.setClickable(false);
 
         List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+        Collections.reverse(recordList);
 
         VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(this, recordList);
         ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
@@ -375,6 +394,7 @@ public class MainActivity extends Activity {
                     record.saveFast();
 
                     List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+                    Collections.reverse(recordList);
 
                     VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
                     ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
@@ -383,6 +403,8 @@ public class MainActivity extends Activity {
                     sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(new File(path))));
 
                     handleTempFile(TARGET_FILE_NAME);
+
+                    progressDialog.dismiss();
                 }
             });
         } catch (FFmpegCommandAlreadyRunningException e) {

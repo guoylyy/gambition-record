@@ -19,6 +19,7 @@ import org.litepal.crud.DataSupport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -82,7 +83,8 @@ public class VideoRecordListAdapter extends BaseAdapter {
         nameTextView.setText(record.getName());
         long current = record.getDate();
         dateTextView.setText(MainActivity.CN_DATE_FULL_FORMAT.format(new Date(current)));
-        secondsTextView.setText(Utility.covertToTimeString(record.getDuration()));
+        // TODO duration re-count
+        secondsTextView.setText(Utility.covertToTimeString(record.getDuration() / 5));
 
         final RelativeLayout operationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_operation_relativelayout);
         LinearLayout.LayoutParams operationRelativeLayoutParams = (LinearLayout.LayoutParams) operationRelativeLayout.getLayoutParams();
@@ -105,15 +107,21 @@ public class VideoRecordListAdapter extends BaseAdapter {
             }
         });
 
+        ImageView renameImageView = (ImageView) view.findViewById(R.id.record_item_rename_imageview);
+        RelativeLayout.LayoutParams renameImageViewParams = (RelativeLayout.LayoutParams) renameImageView.getLayoutParams();
+        renameImageViewParams.width = (int) (64 * PROPORTION);
+        renameImageViewParams.height = (int) (58 * PROPORTION);
+        renameImageViewParams.rightMargin = (int) (60 * PROPORTION);
+
         ImageView deleteImageView = (ImageView) view.findViewById(R.id.record_item_delete_imageview);
         RelativeLayout.LayoutParams deleteImageViewParams = (RelativeLayout.LayoutParams) deleteImageView.getLayoutParams();
         deleteImageViewParams.width = (int) (50 * PROPORTION);
         deleteImageViewParams.height = (int) (66 * PROPORTION);
         deleteImageViewParams.rightMargin = (int) (30 * PROPORTION);
 
-        RelativeLayout rightOperationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_right_operation_relativelayout);
+        RelativeLayout deleteOperationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_delete_operation_relativelayout);
 
-        rightOperationRelativeLayout.setOnClickListener(new View.OnClickListener() {
+        deleteOperationRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 GambitionNotifyDialog.Builder builder = new GambitionNotifyDialog.Builder(context);
@@ -127,7 +135,10 @@ public class VideoRecordListAdapter extends BaseAdapter {
                             context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(videoFile)));
                         }
 
+                        record.delete();
+
                         List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+                        Collections.reverse(recordList);
 
                         VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(context, recordList);
                         ListView recordListView = (ListView) ((Activity) context).findViewById(R.id.main_activity_records_listview);
@@ -140,7 +151,37 @@ public class VideoRecordListAdapter extends BaseAdapter {
                     }
                 });
                 builder.create().show();
-                record.delete();
+            }
+        });
+
+        RelativeLayout renameOperationRelativeLayout = (RelativeLayout) view.findViewById(R.id.record_item_rename_operation_relativelayout);
+
+        renameOperationRelativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final GambitionInputDialog.Builder builder = new GambitionInputDialog.Builder(context);
+                builder.setTitle("请输入名字");
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        record.setName(builder.getInputName());
+                        record.save();
+
+                        List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+                        Collections.reverse(recordList);
+
+                        VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(context, recordList);
+                        ListView recordListView = (ListView) ((Activity) context).findViewById(R.id.main_activity_records_listview);
+                        recordListView.setAdapter(recordListAdapter);
+                    }
+                });
+                builder.setNegativeButton("取消", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                builder.create().show();
+                builder.setInputName(record.getName());
             }
         });
 
