@@ -4,14 +4,10 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaRecorder;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -30,14 +26,12 @@ import com.github.lassana.recorder.AudioRecorder;
 import com.github.lassana.recorder.AudioRecorderBuilder;
 
 import org.litepal.crud.DataSupport;
-import org.litepal.tablemanager.Connector;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -216,26 +210,41 @@ public class MainActivity extends Activity {
                 mediaRecorder.pause(new AudioRecorder.OnPauseListener() {
                     @Override
                     public void onPaused(String activeRecordFileName) {
-                        File defaultSystemPath = new File("/sdcard/DCIM/Camera");
-                        if (!defaultSystemPath.exists()) {
-                            defaultSystemPath.mkdir();
-                        }
+                        final GambitionDialog.Builder builder = new GambitionDialog.Builder(MainActivity.this);
+                        builder.setTitle("请输入名字");
+                        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                File defaultSystemPath = new File("/sdcard/DCIM/Camera");
+                                if (!defaultSystemPath.exists()) {
+                                    defaultSystemPath.mkdir();
+                                }
 
-                        long current = System.currentTimeMillis();
-                        Date currentDate = new Date(current);
-                        String path = defaultSystemPath + "/gambition_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
+                                String name = builder.getInputName();
 
-                        String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
-                        execFFmpegBinary(path, command);
+                                long current = System.currentTimeMillis();
+                                Date currentDate = new Date(current);
+                                String path = defaultSystemPath + "/" + name + "_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
 
-                        VideoRecord record = new VideoRecord(new File(path).getName(), current, 0, path);
-                        record.saveFast();
+                                String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
+                                execFFmpegBinary(path, command);
 
-                        List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+                                VideoRecord record = new VideoRecord(name, current, 0, path);
+                                record.saveFast();
 
-                        VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
-                        ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
-                        recordListView.setAdapter(recordListAdapter);
+                                List<VideoRecord> recordList = DataSupport.findAll(VideoRecord.class);
+
+                                VideoRecordListAdapter recordListAdapter = new VideoRecordListAdapter(MainActivity.this, recordList);
+                                ListView recordListView = (ListView) findViewById(R.id.main_activity_records_listview);
+                                recordListView.setAdapter(recordListAdapter);
+                            }
+                        });
+                        builder.setNegativeButton("取消", new android.content.DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                handleTempFile(TARGET_FILE_NAME);
+                            }
+                        });
+                        builder.create().show();
                     }
 
                     @Override
