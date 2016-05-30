@@ -98,13 +98,6 @@ public class MainActivity extends Activity {
 
         mPermissionsCheckerUtil = new PermissionsCheckerUtil(this);
 
-        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS, Manifest.permission.RECORD_AUDIO};
-        if (mPermissionsCheckerUtil.lacksPermissions()) {
-            Intent intent = new Intent(this, PermissionsActivity.class);
-            intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
-            startActivity(intent);
-        }
-
         initWorkspace();
         initRecorder();
         initBackgroundImage();
@@ -199,6 +192,15 @@ public class MainActivity extends Activity {
         operationHolderRelativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS, Manifest.permission.RECORD_AUDIO};
+                if (mPermissionsCheckerUtil.lacksPermissions(permissions)) {
+                    Intent intent = new Intent(MainActivity.this, PermissionsActivity.class);
+                    intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
+                    startActivity(intent);
+                    return;
+                }
+
                 if (isStartStyle) {
                     setPauseStyle();
                     setFinishEnableStyle();
