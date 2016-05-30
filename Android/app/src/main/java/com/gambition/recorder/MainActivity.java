@@ -193,7 +193,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
 
-                String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS, Manifest.permission.RECORD_AUDIO};
+                String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO};
                 if (mPermissionsCheckerUtil.lacksPermissions(permissions)) {
                     Intent intent = new Intent(MainActivity.this, PermissionsActivity.class);
                     intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
