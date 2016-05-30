@@ -301,7 +301,7 @@ public class MainActivity extends Activity {
                                 Date currentDate = new Date(current);
                                 String path = defaultSystemPath + "/" + name + "_" + DATE_FULL_FORMAT.format(currentDate) + ".mp4";
 
-                                String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", path};
+                                String[] command = {"-i", TARGET_FILE_NAME, "-strict", "-2", "-i", WORKSPACE_PATH + "/bg.jpg", "-c:v", "libx264", "-preset", "ultrafast", path};
                                 execFFmpegBinary(name, current, path, command);
                             }
                         });
