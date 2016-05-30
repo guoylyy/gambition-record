@@ -194,11 +194,13 @@ public class MainActivity extends Activity {
             public void onClick(View view) {
 
                 String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO};
-                if (mPermissionsCheckerUtil.lacksPermissions(permissions)) {
-                    Intent intent = new Intent(MainActivity.this, PermissionsActivity.class);
-                    intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
-                    startActivity(intent);
-                    return;
+                if(Build.Version.SDK_INT >= 23){
+                    if (mPermissionsCheckerUtil.lacksPermissions(permissions)) {
+                        Intent intent = new Intent(MainActivity.this, PermissionsActivity.class);
+                        intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
+                        startActivity(intent);
+                        return;
+                    }
                 }
 
                 if (isStartStyle) {
