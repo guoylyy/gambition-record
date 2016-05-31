@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -104,6 +105,8 @@ public class MainActivity extends Activity {
 
         loadFFMpegBinary();
         initUI();
+
+        throw new NullPointerException("test crash");
     }
 
     private void initWorkspace() {
@@ -194,7 +197,7 @@ public class MainActivity extends Activity {
             public void onClick(View view) {
 
                 String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO};
-                if(Build.Version.SDK_INT >= 23){
+                if (Build.VERSION.SDK_INT >= 23) {
                     if (mPermissionsCheckerUtil.lacksPermissions(permissions)) {
                         Intent intent = new Intent(MainActivity.this, PermissionsActivity.class);
                         intent.putExtra(PermissionsActivity.EXTRA_PERMISSIONS, permissions);
