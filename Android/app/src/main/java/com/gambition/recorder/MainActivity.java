@@ -105,8 +105,6 @@ public class MainActivity extends Activity {
 
         loadFFMpegBinary();
         initUI();
-
-        throw new NullPointerException("test crash");
     }
 
     private void initWorkspace() {

@@ -41,7 +41,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
         if (ex == null) {
             return;
         } else {
-            new SimpleNetTask(mContext) {
+            new SimpleNetTask(mContext, false) {
 
                 @Override
                 protected void doInBack() throws Exception {
